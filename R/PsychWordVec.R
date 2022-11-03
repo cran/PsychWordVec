@@ -5,7 +5,7 @@
 #' @import ggplot2
 #' @import data.table
 #' @importFrom dplyr %>% select left_join
-#' @importFrom bruceR %notin% cc dtime import export Glue Print
+#' @importFrom bruceR %notin% cc dtime import export Glue Print print_table
 .onAttach = function(libname, pkgname) {
   ## Version Check
   new = FALSE
@@ -41,22 +41,16 @@
 
   ## Welcome Message
   if(all(loaded)) {
-    Print("
-    \n
-    <<bold PsychWordVec (v{inst.ver})>>
-
-    <<bold Packages also loaded:>>
-    <<green
-    \u221a dplyr
-    \u221a stringr
-    \u221a ggplot2
-    \u221a data.table
-    >>
-
-    Download pre-trained word vectors data (.RData):
-    https://psychbruce.github.io/WordVector_RData.pdf
-    \n
+    cli::cli_h1("PsychWordVec (v{inst.ver})")
+    cn()
+    cli::cli_alert_success("Packages also loaded: dplyr, stringr, ggplot2, data.table")
+    cn()
+    cli::cli_text("
+    {.href [Documentation](https://psychbruce.github.io/PsychWordVec)}
+    | Download pre-trained word vectors:
+    {.url https://psychbruce.github.io/WordVector_RData.pdf}
     ")
+    cn()
   } else {
     Print("
     \n
@@ -174,7 +168,7 @@ extract_valid_words = function(data, words=NULL, pattern=NULL) {
   }
   if(length(words.valid) < length(words)) {
     for(word in setdiff(words, words.valid))
-      message(Glue("<<red X>> \"{word}\" not found..."))
+      cli::cli_alert_danger("\"{word}\" not found...")
     message("Warning: Some words are not found!")
   }
   return(words.valid)
@@ -264,9 +258,9 @@ data_transform = function(file.load, file.save,
     dt = file.load  # 2 variables: word, vec
   } else {
     if(verbose) {
-      cat("\n")
+      cn()
       Print("****** Data Transformation (~ 30000 words/min in total) ******")
-      cat("\n")
+      cn()
       Print("Loading file... \"{file.load}\"")
     }
     gc()  # Garbage Collection: Free the Memory
@@ -317,7 +311,7 @@ data_transform = function(file.load, file.save,
          compress=compress,
          compression_level=compress.level)
     if(verbose)
-      Print("<<green \u221a>> Saved to \"{file.save}\" (time cost = {dtime(t1, 'mins')})")
+      cli::cli_alert_success("Saved to \"{file.save}\" (time cost = {dtime(t1, 'mins')})")
   }
   gc()  # Garbage Collection: Free the Memory
   if(verbose)
@@ -387,7 +381,7 @@ data_wordvec_load = function(file.load, normalize=FALSE,
   class(data) = c("wordvec", "data.table", "data.frame")
   if(verbose) {
     cat("\015")
-    Print("<<green \u221a>> Word vector data: {nrow(data)} words, {ndim} dims (loading time: {dtime(t0)})")
+    cli::cli_alert_success("Word vector data: {nrow(data)} words, {ndim} dims (loading time: {dtime(t0)})")
   }
   if(normalize) data = data_wordvec_normalize(data, verbose)
   gc()  # Garbage Collection: Free the Memory
@@ -435,10 +429,10 @@ data_wordvec_load = function(file.load, normalize=FALSE,
 data_wordvec_normalize = function(data, verbose=TRUE) {
   check_data_validity(data)
   if(attr(data, "normalized")) {
-    if(verbose) Print("<<red \u221a>> Word vectors have already been normalized.")
+    if(verbose) cli::cli_alert_warning("Word vectors have already been normalized.")
   } else {
     data = normalize(data)
-    if(verbose) Print("<<green \u221a>> All word vectors have now been normalized.")
+    if(verbose) cli::cli_alert_success("All word vectors have now been normalized.")
   }
   gc()  # Garbage Collection: Free the Memory
   invisible(data)
@@ -458,9 +452,12 @@ normalize = function(data) {
 #'
 #' Reshape word vectors data from dense (\code{data.table})
 #' to plain (\code{matrix}) or vice versa.
+#' For easier use, two wrappers
+#' \code{as_matrix()} and \code{as_wordvec()}
+#' are also provided.
 #'
 #' @inheritParams data_wordvec_load
-#' @param data Data to be reshaped. See examples.
+#' @param x Data to be reshaped, could be a \code{matrix}, \code{data.frame}, or \code{data.table}. See examples.
 #' @param to Options include:
 #' \itemize{
 #'   \item{\code{"plain"} (default) reshapes the data
@@ -490,17 +487,19 @@ normalize = function(data) {
 #' d = head(demodata, 10)
 #' d
 #'
-#' d.plain = data_wordvec_reshape(d, to="plain")
+#' d.plain = as_matrix(d)
 #' d.plain
 #'
-#' d.dense = data_wordvec_reshape(d.plain, to="dense")
+#' d.dense = as_wordvec(d.plain)
 #' d.dense  # identical to `d`
 #'
 #' @export
-data_wordvec_reshape = function(data, to=c("plain", "dense"),
+data_wordvec_reshape = function(x, to=c("plain", "dense"),
                                 normalize=FALSE,
                                 verbose=TRUE) {
   to = match.arg(to)
+  data = x
+  rm(x)
   if(to == "plain") {
     check_data_validity(data)
     if(normalize) data = data_wordvec_normalize(data, verbose)
@@ -525,6 +524,20 @@ data_wordvec_reshape = function(data, to=c("plain", "dense"),
   }
   gc()  # Garbage Collection: Free the Memory
   return(data.new)
+}
+
+
+#' @rdname data_wordvec_reshape
+#' @export
+as_wordvec = function(x, normalize=FALSE) {
+  data_wordvec_reshape(x, to="dense", normalize=normalize)
+}
+
+
+#' @rdname data_wordvec_reshape
+#' @export
+as_matrix = function(x, normalize=FALSE) {
+  data_wordvec_reshape(x, to="plain", normalize=normalize)
 }
 
 
@@ -607,7 +620,8 @@ data_wordvec_subset = function(x, words=NULL, pattern=NULL,
   dt = data[word %in% words.valid]  # much faster
   if(!missing(file.save)) {
     t1 = Sys.time()
-    if(verbose) Print("\n\n\nCompressing and saving...")
+    if(verbose)
+      Print("\n\n\nCompressing and saving...")
     compress = switch(compress,
                       `1`="gzip",
                       `2`="bzip2",
@@ -616,7 +630,8 @@ data_wordvec_subset = function(x, words=NULL, pattern=NULL,
     save(dt, file=file.save,
          compress=compress,
          compression_level=compress.level)
-    if(verbose) Print("<<green \u221a>> Saved to \"{file.save}\" (time cost = {dtime(t1, 'auto')})")
+    if(verbose)
+      cli::cli_alert_success("Saved to \"{file.save}\" (time cost = {dtime(t1, 'auto')})")
   }
   gc()  # Garbage Collection: Free the Memory
   invisible(dt)
@@ -929,7 +944,7 @@ plot_wordvec = function(dt, dims=NULL, step=0.05, border="white") {
 #' @param theta Speed/accuracy trade-off (increase for less accuracy), set to 0 for exact t-SNE. Defaults to 0.5.
 #' @param colors A character vector specifying (1) the categories of words (for 2-D plot only)
 #' or (2) the exact colors of words (for 2-D and 3-D plot). See examples for its usage.
-#' @param seed Random seed to obtain reproducible results. Defaults to \code{NULL}.
+#' @param seed Random seed for reproducible results. Defaults to \code{NULL}.
 #' @param custom.Rtsne User-defined \code{\link[Rtsne:Rtsne]{Rtsne}} object using the same \code{dt}.
 #'
 #' @return
@@ -1152,7 +1167,7 @@ most_similar = function(data, x, topn=10,
                         keep=FALSE, above=NULL,
                         verbose=TRUE) {
   if(attr(data, "normalized")==FALSE) {
-    message(Glue("<<red *>> Results may be inaccurate if word vectors are not normalized."))
+    cli::cli_alert_warning("Results may be inaccurate if word vectors are not normalized.")
     data = data_wordvec_normalize(data, verbose)  # pre-normalized
   }
   ms = data.table()
@@ -1263,14 +1278,19 @@ pair_similarity = function(data, word1, word2, distance=FALSE) {
 #'
 #' @examples
 #' tab_similarity(demodata, cc("king, queen, man, woman"))
-#'
 #' tab_similarity(demodata, cc("king, queen, man, woman"),
 #'                unique=TRUE)
 #'
 #' tab_similarity(demodata, cc("Beijing, China, Tokyo, Japan"))
-#'
 #' tab_similarity(demodata, cc("Beijing, China, Tokyo, Japan"),
 #'                unique=TRUE)
+#'
+#' ## select n1 * n2 word pairs crossing two word lists w1 & w2
+#' ## using data.table syntax
+#' w1 = cc("king, queen")
+#' w2 = cc("man, woman")
+#' tab_similarity(demodata, c(w1, w2)) %>%
+#'   .[word1 %in% w1 & word2 %in% w2]
 #'
 #' @export
 tab_similarity = function(data, words=NULL, pattern=NULL,
@@ -1307,9 +1327,14 @@ tab_similarity = function(data, words=NULL, pattern=NULL,
 
 #' Word Embedding Association Test (WEAT) and Single-Category WEAT.
 #'
-#' Tabulate data (cosine similarity and standardized effect size) for the
+#' Tabulate data (cosine similarity and standardized effect size) and
+#' conduct the permutation test of significance for the
 #' \emph{Word Embedding Association Test} (WEAT) and
-#' \emph{Single-Category Word Embedding Association Test} (SC-WEAT) analyses.
+#' \emph{Single-Category Word Embedding Association Test} (SC-WEAT).
+#' \itemize{
+#'   \item{For WEAT, two-samples permutation test is conducted (i.e., rearrangements of data).}
+#'   \item{For SC-WEAT, one-sample permutation test is conducted (i.e., rearrangements of +/- signs to data).}
+#' }
 #'
 #' @inheritParams tab_similarity
 #' @param T1,T2 Target words (a vector of words or a pattern of regular expression).
@@ -1323,9 +1348,40 @@ tab_similarity = function(data, words=NULL, pattern=NULL,
 #' @param labels Labels for target and attribute concepts (a named \code{list}),
 #' such as (the default)
 #' \code{list(T1="Target1", T2="Target2", A1="Attrib1", A2="Attrib2")}.
+#' @param p.perm Permutation test to get exact or approximate \emph{p} value of the overall effect.
+#' Defaults to \code{TRUE}. See also the \code{\link[sweater:weat_exact]{sweater}} package.
+#' @param p.nsim Number of samples for resampling in permutation test. Defaults to \code{10000}.
+#'
+#' If \code{p.nsim} is larger than the number of all possible permutations (rearrangements of data),
+#' then it will be ignored and an exact permutation test will be conducted.
+#' Otherwise (in most cases for real data and always for SC-WEAT), a resampling test is performed,
+#' which takes much less computation time and produces the approximate \emph{p} value (comparable to the exact one).
+#' @param p.side One-sided (\code{1}) or two-sided (\code{2}) \emph{p} value.
+#' Defaults to \code{2}.
+#'
+#' In Caliskan et al.'s (2017) article, they reported one-sided \emph{p} value for WEAT.
+#' Here, I suggest reporting two-sided \emph{p} value as a more conservative estimate.
+#' The users take the full responsibility for the choice.
+#' \itemize{
+#'   \item{The one-sided \emph{p} value is calculated as the proportion of sampled permutations
+#'         where the difference in means is greater than the test statistic.}
+#'   \item{The two-sided \emph{p} value is calculated as the proportion of sampled permutations
+#'         where the absolute difference is greater than the test statistic.}
+#' }
+#' @param seed Random seed for reproducible results of permutation test. Defaults to \code{NULL}.
+#' @param pooled.sd Method used to calculate the pooled \emph{SD} for effect size estimate in WEAT.
+#' \itemize{
+#'   \item{Defaults to \code{"Caliskan"}: \code{sd(data.diff$cos_sim_diff)}, which is highly suggested
+#'         and identical to Caliskan et al.'s (2017) original approach.}
+#'   \item{Otherwise specified, it will calculate the pooled \emph{SD} as:
+#'         \eqn{\sqrt{[(n_1 - 1) * \sigma_1^2 + (n_2 - 1) * \sigma_2^2] / (n_1 + n_2 - 2)}}.
+#'
+#'         This is \strong{NOT suggested} because it may \emph{overestimate} the effect size,
+#'         especially when there are only a few T1 and T2 words that have small variances.}
+#' }
 #'
 #' @return
-#' A \code{list} of objects:
+#' A \code{list} of objects (of new class \code{weat}):
 #' \describe{
 #'   \item{\code{words.valid}}{
 #'     valid (actually matched) words}
@@ -1337,14 +1393,12 @@ tab_similarity = function(data, words=NULL, pattern=NULL,
 #'   \item{\code{data.diff}}{
 #'     \code{data.table} of \emph{differential} mean cosine similarities
 #'     \emph{between} the two attribute concepts}
-#'   \item{\code{code.diff}}{
+#'   \item{\code{eff.title}}{
 #'     description for the difference between the two attribute concepts}
 #'   \item{\code{eff.type}}{
 #'     effect type: WEAT or SC-WEAT}
-#'   \item{\code{eff.raw}}{
-#'     raw effect for WEAT (a single value) or SC-WEAT (a data table)}
-#'   \item{\code{eff.size}}{
-#'     standardized effect size for WEAT (a single value) or SC-WEAT (a data table)}
+#'   \item{\code{eff}}{
+#'     raw effect, standardized effect size, and p value (if \code{p.perm=TRUE})}
 #' }
 #'
 #' @section Download:
@@ -1366,25 +1420,17 @@ tab_similarity = function(data, words=NULL, pattern=NULL,
 #'
 #' weat = test_WEAT(
 #'   demodata,
+#'   labels=list(T1="King", T2="Queen", A1="Male", A2="Female"),
 #'   T1=cc("king, King"),
 #'   T2=cc("queen, Queen"),
 #'   A1=cc("male, man, boy, brother, he, him, his, son"),
 #'   A2=cc("female, woman, girl, sister, she, her, hers, daughter"),
-#'   labels=list(T1="King", T2="Queen", A1="Male", A2="Female"))
-#' weat
-#'
-#' weat = test_WEAT(
-#'   demodata,
-#'   T1="^[kK]ing$",
-#'   T2="^[qQ]ueen$",
-#'   A1="^male$|^man$|^boy$|^brother$|^he$|^him$|^his$|^son$",
-#'   A2="^female$|^woman$|^girl$|^sister$|^she$|^her$|^hers$|^daughter$",
-#'   use.pattern=TRUE,
-#'   labels=list(T1="King", T2="Queen", A1="Male", A2="Female"))
+#'   seed=1)
 #' weat
 #'
 #' sc_weat = test_WEAT(
 #'   demodata,
+#'   labels=list(T1="Occupation", A1="Male", A2="Female"),
 #'   T1=cc("
 #'     architect, boss, leader, engineer, CEO, officer, manager,
 #'     lawyer, scientist, doctor, psychologist, investigator,
@@ -1392,17 +1438,66 @@ tab_similarity = function(data, words=NULL, pattern=NULL,
 #'     salesperson, therapist, psychotherapist, nurse"),
 #'   A1=cc("male, man, boy, brother, he, him, his, son"),
 #'   A2=cc("female, woman, girl, sister, she, her, hers, daughter"),
-#'   labels=list(T1="Occupation", A1="Male", A2="Female"))
+#'   seed=1)
 #' sc_weat
+#'
+#' \dontrun{
+#'
+#' ## the same as the first example, but using regular expression
+#' weat = test_WEAT(
+#'   demodata,
+#'   labels=list(T1="King", T2="Queen", A1="Male", A2="Female"),
+#'   use.pattern=TRUE,  # use regular expression below
+#'   T1="^[kK]ing$",
+#'   T2="^[qQ]ueen$",
+#'   A1="^male$|^man$|^boy$|^brother$|^he$|^him$|^his$|^son$",
+#'   A2="^female$|^woman$|^girl$|^sister$|^she$|^her$|^hers$|^daughter$",
+#'   seed=1)
+#' weat
+#'
+#' ## replicating Caliskan et al.'s (2017) results
+#' ## WEAT7 (Table 1): d = 1.06, p = .018
+#' ## (requiring installation of the `sweater` package)
+#' Caliskan.WEAT7 = test_WEAT(
+#'   as_wordvec(sweater::glove_math),
+#'   labels=list(T1="Math", T2="Arts", A1="Male", A2="Female"),
+#'   T1=cc("math, algebra, geometry, calculus, equations, computation, numbers, addition"),
+#'   T2=cc("poetry, art, dance, literature, novel, symphony, drama, sculpture"),
+#'   A1=cc("male, man, boy, brother, he, him, his, son"),
+#'   A2=cc("female, woman, girl, sister, she, her, hers, daughter"),
+#'   p.side=1, seed=1234)
+#' Caliskan.WEAT7
+#' # d = 1.055, p = .0173 (= 173 counts / 10000 permutation samples)
+#'
+#' ## replicating Caliskan et al.'s (2017) supplemental results
+#' ## WEAT7 (Table S1): d = 0.97, p = .027
+#' Caliskan.WEAT7.supp = test_WEAT(
+#'   demodata,
+#'   labels=list(T1="Math", T2="Arts", A1="Male", A2="Female"),
+#'   T1=cc("math, algebra, geometry, calculus, equations, computation, numbers, addition"),
+#'   T2=cc("poetry, art, dance, literature, novel, symphony, drama, sculpture"),
+#'   A1=cc("male, man, boy, brother, he, him, his, son"),
+#'   A2=cc("female, woman, girl, sister, she, her, hers, daughter"),
+#'   p.side=1, seed=1234)
+#' Caliskan.WEAT7.supp
+#' # d = 0.966, p = .0221 (= 221 counts / 10000 permutation samples)
+#' }
 #'
 #' @export
 test_WEAT = function(data, T1, T2, A1, A2,
-                     use.pattern=FALSE, labels) {
+                     use.pattern=FALSE,
+                     labels=list(),
+                     p.perm=TRUE,
+                     p.nsim=10000,
+                     p.side=2,
+                     seed=NULL,
+                     pooled.sd="Caliskan") {
+  if(!p.side %in% 1:2) stop("`p.side` should be 1 or 2.", call.=FALSE)
   if(missing(A1)) stop("Please specify `A1`.", call.=FALSE)
   if(missing(A2)) stop("Please specify `A2`.", call.=FALSE)
   if(missing(T1)) stop("Please specify `T1`.", call.=FALSE)
   if(missing(T2)) T2 = NULL
-  if(missing(labels)) {
+  if(length(labels)==0) {
     if(missing(T2))
       labels = list(T1="Target", T2=NA, A1="Attrib1", A2="Attrib2")
     else
@@ -1473,49 +1568,118 @@ test_WEAT = function(data, T1, T2, A1, A2,
   ), by=T_word]
   dweat.diff = dweat.diff[order(Target, T_word),
                           .(Target, T_word, cos_sim_diff, std_diff)]
-  if(is.null(T2)) {
-    # SC-WEAT
-    code_diff = paste(labels$T1, "::", labels$A1, "vs.", labels$A2)
-    eff_type = "SC-WEAT (Single-Category Word Embedding Association Test)"
-    # dweat.mean$Target = NULL
-    # dweat.diff$Target = NULL
-    eff_raw = dweat.diff[, .(T_word, cos_sim_diff)]
-    eff_size = dweat.diff[, .(T_word, std_diff)]
-    names(eff_raw)[2] = "eff_raw"
-    names(eff_size)[2] = "eff_size"
-    eff_raw$closer_to = eff_size$closer_to =
-      ifelse(eff_size$eff_size > 0, labels$A1, labels$A2)
-  } else {
+
+  if(!is.null(T2)) {
+
     # WEAT
-    code_diff = paste(labels$T1, "vs.", labels$T2, "::", labels$A1, "vs.", labels$A2)
+    title = paste(labels$T1, "vs.", labels$T2, "::", labels$A1, "vs.", labels$A2)
     eff_type = "WEAT (Word Embedding Association Test)"
-    dweat.diff$std_diff = NULL
-    std_dev = stats::sd(dweat.diff$cos_sim_diff)
-    dweat.diff$std_dev = std_dev
     mean_diffs = dweat.diff[, .(
       mean_diff = mean(cos_sim_diff)
     ), by=Target]$mean_diff
     eff_raw = mean_diffs[1] - mean_diffs[2]
+    if(pooled.sd=="Caliskan")
+      std_dev = stats::sd(dweat.diff$cos_sim_diff)
+    else
+      std_dev = pooled_sd(dweat.diff$cos_sim_diff, T1, T2)
     eff_size = eff_raw / std_dev
+
+    if(p.perm) {
+      ids = c(rep(TRUE, length(T1)), rep(FALSE, length(T2)))
+      set.seed(seed)
+      p = p_perm(dweat.diff$cos_sim_diff,
+                 ids, eff_raw, p.nsim, p.side)
+    } else {
+      p = NULL
+    }
+    eff = data.table(Target=paste0(labels$T1, "/", labels$T2),
+                     Attrib=paste0(labels$A1, "/", labels$A2),
+                     eff_raw, eff_size, p)
+
+  } else {
+
+    # SC-WEAT
+    title = paste(labels$T1, "::", labels$A1, "vs.", labels$A2)
+    eff_type = "SC-WEAT (Single-Category Word Embedding Association Test)"
+    dweat.mean$Target = NULL
+    dweat.diff$Target = NULL
+
+    if(p.perm) {
+      set.seed(seed)
+      p = p_perm(dweat.diff$cos_sim_diff,
+                 nsim=p.nsim, side=p.side)
+    } else {
+      p = NULL
+    }
+    eff = dweat.diff[, .(
+      Target=labels$T1,
+      Attrib=paste0(labels$A1, "/", labels$A2),
+      eff_raw=mean(cos_sim_diff),
+      eff_size=mean(std_diff),
+      pval=p)]
+
   }
 
-  return(list(
+  dweat.diff$closer_to = ifelse(dweat.diff$cos_sim_diff > 0, labels$A1, labels$A2)
+
+  names(eff) = c("Target", "Attrib",
+                 "mean_diff_raw", "eff_size",
+                 names(p))
+
+  weat = list(
     words.valid=list(T1=T1, T2=T2, A1=A1, A2=A2),
     data.raw=dweat,
     data.mean=dweat.mean,
     data.diff=dweat.diff,
-    code.diff=code_diff,
+    eff.title=title,
     eff.type=eff_type,
-    eff.raw=eff_raw,
-    eff.size=eff_size
-  ))
+    eff=eff
+  )
+  class(weat) = "weat"
+  return(weat)
+}
+
+
+#' @export
+print.weat = function(x, digits=3, ...) {
+  cli::cli_h1("{x$eff.type}")
+  cn()
+  data.diff = copy(x$data.diff)
+  if(!is.null(x$words.valid$T2)) {
+    data.diff = data.diff[, c(2, 1, 3, 4, 5)]
+    data.diff$Target = fixed_string(data.diff$Target)
+  }
+  data.diff$T_word = paste0("\"", data.diff$T_word, "\"")
+  data.diff$closer_to = fixed_string(data.diff$closer_to)
+  names(data.diff)[1] = " "
+  print_table(data.diff, row.names=FALSE, digits=digits,
+              title="Relative semantic similarities (differences):")
+  cn()
+  x$eff$Attrib = paste0(" ", x$eff$Attrib)
+  if(length(x$eff)>=5) {
+    p.type = names(x$eff)[5]
+    note = paste(
+      ifelse(grepl("exact", p.type),
+             "Permutation test: exact p value",
+             "Permutation test: approximate p value"),
+      "=", sprintf("%.2e", x$eff[[5]]),
+      ifelse(grepl("1", p.type),
+             "(one-sided)",
+             "(two-sided)"))
+  } else {
+    note = "Note: To get p value with permutation test, specify `p.perm=TRUE`"
+  }
+  print_table(x$eff, row.names=FALSE, digits=digits,
+              title="Overall effect (raw and standardized mean differences):",
+              note=note)
+  cn()
 }
 
 
 #' Relative Norm Distance (RND) analysis.
 #'
-#' Tabulate data for the \emph{Relative Norm Distance} (RND;
-#' also known as \emph{Relative Euclidean Distance}) analysis.
+#' Tabulate data and conduct the permutation test of significance
+#' for the \emph{Relative Norm Distance} (RND; also known as \emph{Relative Euclidean Distance}).
 #' This is an alternative method to \link[PsychWordVec:test_WEAT]{Single-Category WEAT}.
 #'
 #' @inheritParams test_WEAT
@@ -1523,24 +1687,20 @@ test_WEAT = function(data, T1, T2, A1, A2,
 #' @param labels Labels for target and attribute concepts (a named \code{list}),
 #' such as (the default)
 #' \code{list(T1="Target", A1="Attrib1", A2="Attrib2")}.
-#' @param rev Reverse the results? Defaults to \code{FALSE},
-#' which means that a positive (vs. negative) value of RND indicates
-#' the target words are more associated with A2 than A1.
-#' If reversed (\code{TRUE}), then the interpretation of RND will also be reversed.
 #'
 #' @return
-#' A \code{list} of objects:
+#' A \code{list} of objects (of new class \code{rnd}):
 #' \describe{
 #'   \item{\code{words.valid}}{
 #'     valid (actually matched) words}
 #'   \item{\code{data.rnd}}{
 #'     \code{data.table} of (raw and relative) norm distances}
-#'   \item{\code{code.diff}}{
+#'   \item{\code{eff.title}}{
 #'     description for the difference between the two attribute concepts}
 #'   \item{\code{eff.type}}{
 #'     effect type: RND}
-#'   \item{\code{eff.sum}}{
-#'     sum of RND (a single value)}
+#'   \item{\code{eff}}{
+#'     raw effect and p value (if \code{p.perm=TRUE})}
 #'   \item{\code{eff.interpretation}}{
 #'     interpretation of the RND score}
 #' }
@@ -1566,6 +1726,7 @@ test_WEAT = function(data, T1, T2, A1, A2,
 #' @examples
 #' rnd = test_RND(
 #'   demodata,
+#'   labels=list(T1="Occupation", A1="Male", A2="Female"),
 #'   T1=cc("
 #'     architect, boss, leader, engineer, CEO, officer, manager,
 #'     lawyer, scientist, doctor, psychologist, investigator,
@@ -1573,13 +1734,17 @@ test_WEAT = function(data, T1, T2, A1, A2,
 #'     salesperson, therapist, psychotherapist, nurse"),
 #'   A1=cc("male, man, boy, brother, he, him, his, son"),
 #'   A2=cc("female, woman, girl, sister, she, her, hers, daughter"),
-#'   labels=list(T1="Occupation", A1="Male", A2="Female"))
+#'   seed=1)
 #' rnd
 #'
 #' @export
 test_RND = function(data, T1, A1, A2,
                     use.pattern=FALSE, labels,
-                    rev=FALSE) {
+                    p.perm=TRUE,
+                    p.nsim=10000,
+                    p.side=2,
+                    seed=NULL) {
+  if(!p.side %in% 1:2) stop("`p.side` should be 1 or 2.", call.=FALSE)
   if(missing(A1)) stop("Please specify `A1`.", call.=FALSE)
   if(missing(A2)) stop("Please specify `A2`.", call.=FALSE)
   if(missing(T1)) stop("Please specify `T1`.", call.=FALSE)
@@ -1623,24 +1788,66 @@ test_RND = function(data, T1, A1, A2,
   })
   drnd$rnd = drnd$norm_dist_A1 - drnd$norm_dist_A2
   drnd$closer_to = ifelse(drnd$rnd < 0, labels$A1, labels$A2)
-  if(rev) {
-    drnd$rnd = -drnd$rnd
-    names(drnd)[4] = "rnd_rev"
-    interp = c(bruceR::Glue("If RND < 0: {labels$T1} is more associated with {labels$A2} than {labels$A1}"),
-               bruceR::Glue("If RND > 0: {labels$T1} is more associated with {labels$A1} than {labels$A2}"))
-  } else {
-    interp = c(bruceR::Glue("If RND < 0: {labels$T1} is more associated with {labels$A1} than {labels$A2}"),
-               bruceR::Glue("If RND > 0: {labels$T1} is more associated with {labels$A2} than {labels$A1}"))
-  }
 
-  return(list(
+  interp = c(Glue("If RND < 0: {labels$T1} is more associated with {labels$A1} than {labels$A2}"),
+             Glue("If RND > 0: {labels$T1} is more associated with {labels$A2} than {labels$A1}"))
+
+  if(p.perm) {
+    set.seed(seed)
+    p = p_perm(drnd$rnd, nsim=p.nsim, side=p.side)
+  } else {
+    p = NULL
+  }
+  eff = data.table(
+    Target=labels$T1,
+    Attrib=paste0(labels$A1, "/", labels$A2),
+    eff_raw=sum(drnd$rnd),
+    pval=p)
+  names(eff) = c("Target", "Attrib",
+                 "rnd_sum",
+                 names(p))
+
+  rnd = list(
     words.valid=list(T1=T1, A1=A1, A2=A2),
     data.rnd=drnd,
-    code.diff=paste(labels$T1, "::", labels$A1, "vs.", labels$A2),
+    eff.title=paste(labels$T1, "::", labels$A1, "vs.", labels$A2),
     eff.type="Relative Norm Distance (RND)",
-    eff.sum=ifelse(rev, sum(drnd$rnd_rev), sum(drnd$rnd)),
+    eff=eff,
     eff.interpretation=interp
-  ))
+  )
+  class(rnd) = "rnd"
+  return(rnd)
+}
+
+
+#' @export
+print.rnd = function(x, digits=3, ...) {
+  cli::cli_h1("{x$eff.type}")
+  cn()
+  data.rnd = copy(x$data.rnd)
+  data.rnd$T_word = paste0("\"", data.rnd$T_word, "\"")
+  data.rnd$closer_to = fixed_string(data.rnd$closer_to)
+  names(data.rnd)[1] = " "
+  print_table(data.rnd[, c(1, 4, 5, 2, 3)],
+              row.names=FALSE, digits=digits,
+              title="Relative norm distances (differences):",
+              note=paste(x$eff.interpretation, collapse="\n"))
+  cn()
+  x$eff$Attrib = paste0(" ", x$eff$Attrib)
+  if(length(x$eff)>=4) {
+    p.type = names(x$eff)[4]
+    note = paste("Permutation test: approximate p value =",
+                 sprintf("%.2e", x$eff[[4]]),
+                 ifelse(grepl("1", p.type),
+                        "(one-sided)",
+                        "(two-sided)"))
+  } else {
+    note = "Note: To get p value with permutation test, specify `p.perm=TRUE`"
+  }
+  print_table(x$eff, row.names=FALSE, digits=digits,
+              title="Overall effect (raw):",
+              note=note)
+  cn()
 }
 
 
@@ -1723,7 +1930,7 @@ tokenize = function(text,
     if(file.exists(text)) {
       if(verbose) Print("Reading text from file...")
       text = readLines(text, encoding=encoding, warn=FALSE)
-      if(verbose) Print("<<green \u221a>> Raw text corpus has been loaded (time cost = {dtime(t0, 'auto')})")
+      if(verbose) cli::cli_alert_success("Raw text corpus has been loaded (time cost = {dtime(t0, 'auto')})")
     }
   }
 
@@ -1735,7 +1942,7 @@ tokenize = function(text,
   texts = vapply(tokens, paste, collapse=split, FUN.VALUE=character(1))
   texts = texts[texts!=""]
   gc()
-  if(verbose) Print("<<green \u221a>> Tokenized: {length(texts)} sentences (time cost = {dtime(t0, 'auto')})")
+  if(verbose) cli::cli_alert_success("Tokenized: {length(texts)} sentences (time cost = {dtime(t0, 'auto')})")
   if(simplify)
     return(texts)
   else
@@ -1978,7 +2185,7 @@ train_wordvec = function(
       t0 = Sys.time()
       if(verbose) Print("Reading text from file...")
       text = readLines(text, encoding=encoding, warn=FALSE)
-      if(verbose) Print("<<green \u221a>> Raw text corpus has been loaded (time cost = {dtime(t0, 'auto')})")
+      if(verbose) cli::cli_alert_success("Raw text corpus has been loaded (time cost = {dtime(t0, 'auto')})")
     }
   }
 
@@ -1989,13 +2196,14 @@ train_wordvec = function(
   tokens = unlist(strsplit(text, split))
   freq = as.data.table(table(tokens))
   names(freq) = c("token", "freq")
-  if(verbose) Print("<<green \u221a>> Text corpus: {sum(nchar(tokens))} characters, {length(tokens)} tokens (roughly words)")
+  if(verbose) cli::cli_alert_success("Text corpus: {sum(nchar(tokens))} characters, {length(tokens)} tokens (roughly words)")
 
   ## Train word vectors
   t1 = Sys.time()
-  if(verbose)
+  if(verbose) {
+    cli::cli_h1("Training model information")
     Print("
-    <<cyan \u2022 Training model info:
+    <<cyan
     - Method:      {method.text}
     - Dimensions:  {dims}
     - Window size: {window} ({window} words behind and {window} words ahead the current word)
@@ -2004,8 +2212,9 @@ train_wordvec = function(
     - Iterations:  {iteration} training iterations
     - CPU threads: {threads}
     >>
-    Training...
     ")
+    cli::cli_h3("Training...")
+  }
   gc()
 
   ##---- Word2Vec ----##
@@ -2025,8 +2234,7 @@ train_wordvec = function(
       threads = threads,
       encoding = encoding
     )
-    wv = as.matrix(model) %>%
-      data_wordvec_reshape(to="dense")
+    wv = as.matrix(model) %>% as_wordvec()
   }
 
   ##---- GloVe ----##
@@ -2051,7 +2259,7 @@ train_wordvec = function(
     })
     wv.context = model$components
     wv = wv.main + t(wv.context)
-    wv = data_wordvec_reshape(wv, to="dense")
+    wv = as_wordvec(wv)
   }
 
   ##---- FastText ----##
@@ -2078,13 +2286,13 @@ train_wordvec = function(
       method = gsub("-", "", model),
       control = control)
     wv = as.matrix(model$word_vectors(model$words())) %>%
-      data_wordvec_reshape(to="dense")
+      as_wordvec()
   }
 
   ## Order by word frequency
   wv = left_join(wv, freq, by=c("word"="token"))
   wv = wv[order(-freq), ][freq>=min.freq, ]
-  if(verbose) Print("<<green \u221a>> Word vectors trained: {nrow(wv)} unique tokens (time cost = {dtime(t1, 'auto')})")
+  if(verbose) cli::cli_alert_success("Word vectors trained: {nrow(wv)} unique tokens (time cost = {dtime(t1, 'auto')})")
 
   ## Normalize
   if(normalize) wv = data_wordvec_normalize(wv, verbose)
@@ -2101,7 +2309,7 @@ train_wordvec = function(
     save(wv, file=file.save,
          compress=compress,
          compression_level=9)
-    if(verbose) Print("<<green \u221a>> Saved to \"{file.save}\" (time cost = {dtime(t2, 'auto')})")
+    if(verbose) cli::cli_alert_success("Saved to \"{file.save}\" (time cost = {dtime(t2, 'auto')})")
   }
 
   gc()
