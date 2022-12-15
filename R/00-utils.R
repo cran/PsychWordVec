@@ -19,11 +19,11 @@ if(FALSE) {
 }
 
 
-#' Demo data (corpus: Google News; algorithm: word2vec; vocabulary: 8000; dimensions: 300).
+#' Demo data (pre-trained using word2vec on Google News; 8000 vocab, 300 dims).
 #'
 #' @description
 #' This demo data contains a sample of 8000 English words
-#' with their 300-d word embeddings (word vectors) trained
+#' with 300-dimension word vectors pre-trained
 #' using the "word2vec" algorithm based on the Google News corpus.
 #' Most of these words are from the Top 8000 frequent wordlist,
 #' whereas a few are selected from less frequent words and appended.
@@ -52,6 +52,37 @@ NULL
 
 
 #### Utility Functions ####
+
+
+#' @importFrom bruceR cc
+#' @export
+bruceR::cc
+
+
+is.wordvec = function(x) inherits(x, "wordvec")
+is.embed = function(x) inherits(x, "embed")
+is.valid = function(x) inherits(x, c("wordvec", "embed"))
+grey = cli::make_ansi_style("grey60")
+
+
+check_data_validity = function(x) {
+  if(!is.valid(x))
+    stop("Input must be `wordvec` or `embed`!", call.=FALSE)
+}
+
+
+check_load_validity = function(file.load) {
+  if(!is.null(file.load))
+    if(!str_detect(file.load, "\\.rda$|\\.[Rr][Dd]ata$"))
+      stop("`file.load` must be .RData!", call.=FALSE)
+}
+
+
+check_save_validity = function(file.save) {
+  if(!is.null(file.save))
+    if(!str_detect(file.save, "\\.rda$|\\.[Rr][Dd]ata$"))
+      stop("`file.save` must be .RData!", call.=FALSE)
+}
 
 
 cn = function(n=1) cat(rep("\n", times=n))
@@ -148,11 +179,21 @@ fixed_string = function(v) {
 valid_words_info = function(x) {
   ns = x$eff.label$words
   ls = paste0(unlist(x$eff.label$labels), " (",
-              names(x$eff.label$labels), ")")
+              names(x$eff.label$labels), ") valid")
   nf = length(x$words.not.found)
   nf = ifelse(nf==0, "", paste0("\n(", nf, " words not found)"))
   info = paste0(paste(paste(ns, ls, "words"), collapse="\n"), nf)
   return(info)
+}
+
+
+warning_not_found = function(not.found) {
+  n.nf = length(not.found)
+  n.nf.ws = ifelse(n.nf > 1, "words", "word")
+  if(n.nf > 100)
+    cli::cli_alert_danger("{n.nf} {n.nf.ws} not found: {.val {not.found[1]}}, ... (omitted)")
+  else if(n.nf > 0)
+    cli::cli_alert_danger("{n.nf} {n.nf.ws} not found: {.val {not.found}}")
 }
 
 

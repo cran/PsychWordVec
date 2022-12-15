@@ -133,8 +133,8 @@ text_initialized = function() {
 #'   \item{\code{"microsoft/deberta-v3-large"} (128100 vocab, 1024 dims, 24 layers)}
 #'   \item{\code{...} (see \url{https://huggingface.co/models})}
 #' }
-#' @param save.config Save configuration file of the model to the current path.
-#' Defaults to \code{TRUE}.
+## @param save.config Save configuration file of the model to the current path.
+## Defaults to \code{TRUE}.
 #'
 #' @return
 #' Invisibly return the names of all downloaded models.
@@ -161,7 +161,7 @@ text_initialized = function() {
 #' }
 #'
 #' @export
-text_model_download = function(model=NULL, save.config=TRUE) {
+text_model_download = function(model=NULL) {
   text_initialized()
   if(!is.null(model)) {
     for(m in model) {
@@ -175,7 +175,7 @@ text_model_download = function(model=NULL, save.config=TRUE) {
       Print("<<cyan Downloading model...>>")
       model = transformers$AutoModel$from_pretrained(m)
       cli::cli_alert_success("Successfully downloaded model \"{m}\"")
-      if(save.config) writeLines(as.character(config), paste0("config_", m))
+      # if(save.config) writeLines(as.character(config), paste0("config_", m))
       gc()
     }
   }
@@ -220,7 +220,7 @@ text_model_remove = function(model=NULL) {
   if("NoModelsAvailable" %in% model) {
     cli::cli_alert_warning("No models available. Download using `text_model_download()`.")
   } else {
-    yesno = utils::menu(
+    yesno = menu(
       c("Yes", "No"),
       title=paste("\nDo you want to delete these models?\n",
                   paste(paste0("\"", model, "\""),
@@ -237,15 +237,15 @@ text_model_remove = function(model=NULL) {
 #'
 #' Extract hidden layers from a language model and aggregate them to
 #' get token (roughly word) embeddings and text embeddings
-#' (all reshaped to \code{\link[PsychWordVec:as_wordvec]{wordvec}} data tables).
+#' (all reshaped to \code{\link[PsychWordVec:as_embed]{embed}} matrix).
 #' It is a wrapper function of \code{\link[text:textEmbed]{text::textEmbed()}}.
 #'
 #' @param text Can be:
 #' \itemize{
 #'   \item{a character string or vector of text (usually sentences)}
-#'   \item{a file path on disk containing text}
 #'   \item{a data frame with at least one character variable
 #'   (for text from all character variables in a given data frame)}
+#'   \item{a file path on disk containing text}
 #' }
 #' @param model Model name at \href{https://huggingface.co/models}{HuggingFace}.
 #' See \code{\link{text_model_download}}.
@@ -253,20 +253,22 @@ text_model_remove = function(model=NULL) {
 #' @param layers Layers to be extracted from the \code{model},
 #' which are then aggregated in the function
 #' \code{\link[text:textEmbedLayerAggregation]{text::textEmbedLayerAggregation()}}.
-#' Defaults to \code{-2} which extracts the second to last layers.
-#' You may extract only the layers you need (e.g., \code{11:12}) or
-#' all layers (\code{"all"}).
+#' Defaults to \code{"all"} which extracts all layers.
+#' You may extract only the layers you need (e.g., \code{11:12}).
 #' Note that layer 0 is the \emph{decontextualized} input layer
-#' (i.e., not comprising hidden states) and is normally not used.
+#' (i.e., not comprising hidden states).
 #' @param encoding Text encoding (only used if \code{text} is a file).
 #' Defaults to \code{"UTF-8"}.
 #' @param layer.to.token Method to aggregate hidden layers to each token.
 #' Defaults to \code{"concatenate"},
 #' which links together each word embedding layer to one long row.
 #' Options include \code{"mean"}, \code{"min"}, \code{"max"}, and \code{"concatenate"}.
-#' @param token.to.text Method to aggregate all tokens to each text.
-#' Defaults to \code{"mean"}.
-#' Options include \code{"mean"}, \code{"min"}, \code{"max"}, and \code{"concatenate"}.
+#' @param token.to.word Aggregate subword token embeddings (if whole word is out of vocabulary)
+#' to whole word embeddings. Defaults to \code{TRUE}, which sums up subword token embeddings.
+#' @param token.to.text Aggregate token embeddings to each text.
+#' Defaults to \code{TRUE}, which averages all token embeddings.
+#' If \code{FALSE}, the text embedding will be the token embedding of \code{[CLS]}
+#' (the special token that is used to represent the beginning of a text sequence).
 #' @param ... Other parameters passed to
 #' \code{\link[text:textEmbed]{text::textEmbed()}}.
 #'
@@ -292,30 +294,35 @@ text_model_remove = function(model=NULL) {
 #' \dontrun{
 #' # text_init()  # initialize the environment
 #'
-#' text = c("I love China.", "Beijing is the capital of China.")
-#' embed = text_to_vec(text, model="bert-base-cased")
-#' embed$token.embed
-#' embed$text.embed
+#' text = c("Download models from HuggingFace",
+#'          "Chinese are East Asian",
+#'          "Beijing is the capital of China")
+#' embed = text_to_vec(text, model="bert-base-cased", layers=c(0, 12))
+#' embed
 #'
 #' embed1 = embed$token.embed[[1]]
 #' embed2 = embed$token.embed[[2]]
+#' embed3 = embed$token.embed[[3]]
 #'
 #' View(embed1)
 #' View(embed2)
+#' View(embed3)
 #' View(embed$text.embed)
 #'
 #' plot_similarity(embed1, value.color="grey")
 #' plot_similarity(embed2, value.color="grey")
-#' plot_similarity(rbind(embed1, embed2))
+#' plot_similarity(embed3, value.color="grey")
+#' plot_similarity(rbind(embed1, embed2, embed3))
 #' }
 #'
 #' @export
 text_to_vec = function(
     text,
     model,
-    layers=-2,
+    layers="all",
     layer.to.token="concatenate",
-    token.to.text="mean",
+    token.to.word=TRUE,
+    token.to.text=TRUE,
     encoding="UTF-8",
     ...
 ) {
@@ -339,48 +346,44 @@ text_to_vec = function(
     layers=layers,
     keep_token_embeddings=TRUE,
     aggregation_from_layers_to_tokens=layer.to.token,
-    aggregation_from_tokens_to_texts=token.to.text,
+    aggregation_from_tokens_to_texts="mean",
     ...)
-  {
-    token.embed = lapply(
-      embed[["tokens"]][["texts"]],
-      function(data) {
-        mat = as.matrix(data[-1])
-        data = data.table(
-          token = data$tokens,
-          vec = do.call("list", lapply(
-            1:nrow(mat), function(i) {
-              as.numeric(mat[i,])
-            }))
-        )
-        attr(data, "dims") = ncol(mat)
-        attr(data, "normalized") = FALSE
-        class(data) = c("wordvec", "data.table", "data.frame")
-        return(data)
-      })
-  }
-  {
-    tmat = as.matrix(embed[["texts"]][["texts"]])
-    text.embed = data.table(
-      text = sapply(
-        embed[["tokens"]][["texts"]],
-        function(data) {
-          paste(data$tokens, collapse=" ")
-        }),
-      vec = do.call("list", lapply(
-        1:nrow(tmat), function(i) {
-          as.numeric(tmat[i,])
-        }))
-    )
-    attr(text.embed, "dims") = ncol(tmat)
-    attr(text.embed, "normalized") = FALSE
-    class(text.embed) = c("wordvec", "data.table", "data.frame")
-  }
+
+  token.embed = lapply(embed[["tokens"]][["texts"]], as_embed)
+  if(token.to.word)
+    token.embed = lapply(token.embed, token_to_word)
+  if(token.to.text)
+    text.embed = as_embed(embed[["texts"]][["texts"]])
+  else
+    text.embed = do.call(
+      "rbind",
+      lapply(embed[["tokens"]][["texts"]], function(df) {
+        as_embed(df[1,])
+      }))
+  rownames(text.embed) = sapply(
+    embed[["tokens"]][["texts"]],
+    function(data) { paste(data$tokens, collapse=" ") })
 
   embeds = list(token.embed=token.embed,
                 text.embed=text.embed)
 
   return(embeds)
+}
+
+
+token_to_word = function(embed) {
+  if(any(str_detect(rownames(embed), "##"))) {
+    for(i in nrow(embed):2) {
+      if(str_detect(rownames(embed)[i], "^##")) {
+        embed[i-1,] = embed[i-1,] + embed[i,]
+        rownames(embed)[i-1] = paste0(
+          rownames(embed)[i-1],
+          str_remove(rownames(embed)[i], "##"))
+      }
+    }
+    embed = as_embed(embed[str_detect(rownames(embed), "^##", negate=TRUE),])
+  }
+  return(embed)
 }
 
 
@@ -397,13 +400,20 @@ text_to_vec = function(
 #'
 #' @inheritParams text_to_vec
 #' @param query A query (sentence/prompt) with masked token(s) \code{[MASK]}.
-#' See examples.
-#' @param topn Number of predictions to return. Defaults to \code{5}.
+#' Multiple queries are also supported. See examples.
+#' @param targets Specific target word(s) to be filled in the blank \code{[MASK]}.
+#' Defaults to \code{NULL} (i.e., return \code{topn}).
+#' If specified, then \code{topn} will be ignored (see examples).
+#' @param topn Number of the most likely predictions to return.
+#' Defaults to \code{5}. If \code{targets} is specified,
+#' then it will automatically change to the length of \code{targets}.
 #'
 #' @return
 #' A \code{data.table} of query results:
 #' \describe{
-#'   \item{\code{mask_id}}{
+#'   \item{\code{query_id} (if there are more than one \code{query})}{
+#'     \code{query} ID (indicating multiple queries)}
+#'   \item{\code{mask_id} (if there are more than one [MASK] in \code{query})}{
 #'     \code{[MASK]} ID (position in sequence, indicating multiple masks)}
 #'   \item{\code{prob}}{
 #'     Probability of the predicted token in the sequence}
@@ -429,24 +439,66 @@ text_to_vec = function(
 #' # text_init()  # initialize the environment
 #'
 #' model = "distilbert-base-cased"
+#'
 #' text_unmask("Beijing is the [MASK] of China.", model)
+#'
+#' # multiple [MASK]s:
 #' text_unmask("Beijing is the [MASK] [MASK] of China.", model)
-#' text_unmask("The man worked as a [MASK].", model)
-#' text_unmask("The woman worked as a [MASK].", model)
+#'
+#' # multiple queries:
+#' text_unmask(c("The man worked as a [MASK].",
+#'               "The woman worked as a [MASK]."),
+#'             model)
+#'
+#' # specific targets:
+#' text_unmask("The [MASK] worked as a nurse.", model,
+#'             targets=c("man", "woman"))
 #' }
 #'
 #' @export
-text_unmask = function(query, model, topn=5) {
+text_unmask = function(query, model, targets=NULL, topn=5) {
   text_initialized()
+
+  if(!is.null(targets)) {
+    targets = as.character(unique(targets))
+    targets = factor(targets, levels=targets)
+    topn = length(targets)
+  }
+  topn = as.integer(topn)
   query = str_replace_all(query, "\\[mask\\]", "[MASK]")
-  nquery = str_count(query, "\\[MASK\\]")
-  mask_id = data.table(mask_id=rep(1:nquery, each=topn))
+  if(str_detect(model, "roberta-base|roberta-large"))
+    query = str_replace_all(query, "\\[MASK\\]", "<mask>")
+  nmask = unique(str_count(query, "\\[MASK\\]|<mask>"))
+  nquery = length(query)
+  if(length(nmask) > 1)
+    stop("All queries should have the same number of [MASK].", call.=FALSE)
+
   transformers = reticulate::import("transformers")
   fill_mask = transformers$pipeline("fill-mask", model=model)
-  res = fill_mask(query, top_k=as.integer(topn))
-  if(nquery>1) res = unlist(res, recursive=FALSE)
-  res = cbind(mask_id, rbindlist(res))
-  names(res) = c("mask_id", "prob", "token_id", "token", "sequence")
+
+  if(is.null(targets)) {
+    res = do.call(c, lapply(query, function(q) fill_mask(q, top_k=topn)))
+  } else {
+    res = do.call(c, lapply(query, function(q) {
+      do.call(c, lapply(targets, function(target) {
+        fill_mask(q, targets=target, top_k=1L)
+      }))
+    }))
+  }
+
+  if(nmask > 1) res = unlist(res, recursive=FALSE)
+  qm_id = data.table(
+    query_id = rep(1:nquery, each=topn*nmask),
+    mask_id = if(is.null(targets)) rep(1:nmask, each=topn) else rep(1:nmask, topn))
+  res = cbind(qm_id, rbindlist(res))
+  names(res) = c("query_id", "mask_id", "prob", "token_id", "token", "sequence")
+  if(!is.null(targets)) {
+    res$token = factor(str_remove(res$token, "\u2581"),
+                       levels=str_remove(as.character(targets), "\u2581"))
+    res = res[order(res$token)]
+  }
+  if(length(unique(res$query_id)) == 1) res$query_id = NULL
+  if(length(unique(res$mask_id)) == 1) res$mask_id = NULL
   return(res)
 }
 

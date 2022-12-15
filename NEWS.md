@@ -1,5 +1,33 @@
 **Please check the [latest news (change log)](https://psychbruce.github.io/PsychWordVec/news/index.html) and keep this package updated.**
 
+# PsychWordVec 0.3.0 (Dec 2022)
+
+⚠️ *All users should update the package to version ≥ 0.3.0. Old versions (≤ 0.2.0) may run slowly, and some old functions have been deprecated.*
+
+## New Features
+
+-   New S3 `[` method for `embed`, see new examples in `as_embed()`.
+-   New S3 `unique()` method to delete duplicate words.
+-   New S3 `str()` method to print the data structure and attributes.
+-   New `pattern()` function designed for S3 `[` method of `embed`: Users can directly use regular expression like `embed[pattern("^for")]` to extract a subset of embedding matrix.
+-   New `plot_network()` function: Visualize a (partial correlation) network graph of words. Very useful for identifying potential semantic clusters from a list of words and even useful for disentangling antonyms from synonyms.
+-   New `targets` argument of `text_unmask()`: Return specific fill-mask results for certain target words (rather than the top *n* results).
+
+## Major Changes
+
+-   Most functions now have been substantially enhanced for a faster speed, especially `tab_similarity()`, `most_similar()`, `dict_expand()`, `dict_reliability()`, `test_WEAT()`, `test_RND()`.
+-   Improved S3 `print()` method for `embed` and `wordvec`.
+-   `pair_similarity()` has been improved by using matrix operation `tcrossprod(embed, embed)` to compute cosine similarity, with `embed` normalized.
+-   `data_wordvec_load()` has got two wrapper functions `load_wordvec()` and `load_embed()` for faster use.
+-   `data_wordvec_normalize()` (deprecated) has been renamed to `normalize()`.
+-   `get_wordvecs()` (deprecated) has been integrated into `get_wordvec()`.
+-   `tab_similarity_cross()` (deprecated) has been integrated into `tab_similarity()`.
+-   `test_WEAT()` and `test_RND()`: Warning if `T1` and `T2` or `A1` and `A2` have duplicate values.
+
+## Bug Fixes
+
+-   Fixed the issue of unexpected long loading and processing time in 0.2.0, which was related to duplicate words in .RData, too many words in `embed` or `wordvec`, and too many words to be printed to console. Now all related functions have been substantially improved so that they would not take unnecessarily long time.
+
 # PsychWordVec 0.2.0 (Dec 2022)
 
 ## Breaking News
@@ -20,25 +48,12 @@
 -   New `sum_wordvec()` function: Calculate the sum vector of multiple words.
 -   New `plot_similarity()` function: Visualize cosine similarities between word pairs in a style of correlation matrix plot.
 -   New `tab_similarity_cross()` function: A wrapper of `tab_similarity()` to tabulate cosine similarities for only n1 \* n2 word pairs from two sets of words (arguments: `words1`, `words2`).
--   New S3 methods:
-    -   `print.wordvec()`
-
-    -   `print.embed()`
-
-    -   `rbind.wordvec()`
-
-    -   `rbind.embed()`
-
-    -   `subset.wordvec()`
-
-    -   `subset.embed()`
-
-    -   `subset.character()`
+-   New S3 methods: `print.wordvec()`, `print.embed()`, `rbind.wordvec()`, `rbind.embed()`, `subset.wordvec()`, `subset.embed()`
 
 ## Major Changes
 
 -   `as_matrix()` has been renamed to `as_embed()`: Now `PsychWordVec` supports two classes of data objects -- `wordvec` (data.table) and `embed` (matrix). Most functions now use `embed` (or transform `wordvec` to `embed`) internally so as to enhance the speed. Matrix is much faster!
--   Deprecated `data_wordvec_reshape()` function: Use `as_wordvec()` and `as_embed()` now.
+-   Deprecated `data_wordvec_reshape()`: Now use `as_wordvec()` and `as_embed()`.
 
 ## Minor Changes
 

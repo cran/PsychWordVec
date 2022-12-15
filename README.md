@@ -4,15 +4,17 @@ Word Embedding Research Framework for Psychological Science.
 
 An integrated toolbox of word embedding research that provides:
 
-1.  A collection of [pre-trained static word vectors](https://psychbruce.github.io/WordVector_RData.pdf) in the `.RData` compressed format;
+1.  A collection of [pre-trained static word vectors](https://psychbruce.github.io/WordVector_RData.pdf) in the .RData compressed format;
 2.  A series of functions to process, analyze, and visualize word vectors;
 3.  A range of tests to examine conceptual associations, including the *Word Embedding Association Test* (Caliskan et al., 2017) and the *Relative Norm Distance* (Garg et al., 2018), with permutation test of significance;
 4.  A set of training methods to locally train (*static*) word vectors from text corpora, including *Word2Vec* (Mikolov et al., 2013), *GloVe* (Pennington et al., 2014), and *FastText* (Bojanowski et al., 2017);
 5.  A group of functions to download pre-trained language models (e.g., *GPT*, *BERT*), extract contextualized (*dynamic*) word vectors (based on the R package [text](https://www.r-text.org/)), and perform language analysis tasks (e.g., fill in the blank masks).
 
+⚠️ *All users should update the package to version ≥ 0.3.0. Old versions (≤ 0.2.0) may run slowly, and some old functions have been deprecated.*
+
 <!-- badges: start -->
 
-[![CRAN-Version](https://www.r-pkg.org/badges/version/PsychWordVec?color=red)](https://CRAN.R-project.org/package=PsychWordVec) [![GitHub-Version](https://img.shields.io/github/r-package/v/psychbruce/PsychWordVec?label=GitHub&color=orange)](https://github.com/psychbruce/PsychWordVec) [![R-CMD-check](https://github.com/psychbruce/PsychWordVec/workflows/R-CMD-check/badge.svg)](https://github.com/psychbruce/PsychWordVec/actions) [![CRAN-Downloads](https://cranlogs.r-pkg.org/badges/grand-total/PsychWordVec)](https://CRAN.R-project.org/package=PsychWordVec) [![GitHub-Stars](https://img.shields.io/github/stars/psychbruce/PsychWordVec?style=social)](https://github.com/psychbruce/PsychWordVec/stargazers)
+[![CRAN-Version](https://www.r-pkg.org/badges/version/PsychWordVec?color=red)](https://CRAN.R-project.org/package=PsychWordVec) [![GitHub-Version](https://img.shields.io/github/r-package/v/psychbruce/PsychWordVec?label=GitHub&color=orange)](https://github.com/psychbruce/PsychWordVec) [![R-CMD-check](https://github.com/psychbruce/PsychWordVec/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/psychbruce/PsychWordVec/actions/workflows/R-CMD-check.yaml) [![CRAN-Downloads](https://cranlogs.r-pkg.org/badges/grand-total/PsychWordVec)](https://psychbruce.github.io/PsychWordVec/) [![GitHub-Stars](https://img.shields.io/github/stars/psychbruce/PsychWordVec?style=social)](https://github.com/psychbruce/PsychWordVec/stargazers)
 
 <!-- badges: end -->
 
@@ -41,37 +43,48 @@ install.packages("devtools")
 devtools::install_github("psychbruce/PsychWordVec", force=TRUE)
 ```
 
+## Types of Data for `PsychWordVec`
+
+|                  | `embed`                        | `wordvec`                    |
+|------------------|--------------------------------|------------------------------|
+| Basic class      | matrix                         | data.table                   |
+| Row size         | vocabulary size                | vocabulary size              |
+| Column size      | dimension size                 | 2 (variables: `word`, `vec`) |
+| Advantage        | faster (with matrix operation) | easier to inspect and manage |
+| Function to get  | `as_embed()`                   | `as_wordvec()`               |
+| Function to load | `load_embed()`                 | `load_wordvec()`             |
+
+: Note: Word embedding refers to a natural language processing technique that embeds word semantics into a low-dimensional **embedding matrix**, with each word (actually token) quantified as a **numeric vector** representing its (uninterpretable) semantic features. Users are suggested to import [word vectors data](https://psychbruce.github.io/WordVector_RData.pdf) as the `embed` class using the function `load_embed()`, which would automatically normalize all word vectors to the unit length 1 (see the `normalize()` function) and accelerate the running of most functions in `PsychWordVec`.
+
 ## Functions in `PsychWordVec`
 
 -   Word Embeddings Data Management and Transformation
     -   `as_embed()`: from `wordvec` (data.table) to `embed` (matrix)
     -   `as_wordvec()`: from `embed` (matrix) to `wordvec` (data.table)
+    -   `load_embed()`: load word embeddings data as `embed` (matrix)
+    -   `load_wordvec()`: load word embeddings data as `wordvec` (data.table)
     -   `data_transform()`: transform plain text word vectors to `wordvec` or `embed`
-    -   `data_wordvec_load()`
-    -   `data_wordvec_normalize()`
-    -   `data_wordvec_subset()` or `subset()` (S3 method for `wordvec` and `embed`)
-    -   `orth_procrustes()`: Orthogonal Procrustes matrix alignment
 -   Word Vectors Extraction, Linear Operation, and Visualization
+    -   `subset()`: extract a subset of `wordvec` and `embed`
+    -   `normalize()`: normalize all word vectors to the unit length 1
     -   `get_wordvec()`
-    -   `get_wordvecs()`
     -   `sum_wordvec()`
     -   `plot_wordvec()`
     -   `plot_wordvec_tSNE()`: 2D or 3D visualization with t-SNE
--   Word Semantic Similarity Analysis and Conceptual Association Test
-    -   `cosine_similarity()`
-        -   `cos_sim()`
-        -   `cos_dist()`
+    -   `orth_procrustes()`: Orthogonal Procrustes matrix alignment
+-   Word Semantic Similarity Analysis, Network Analysis, and Association Test
+    -   `cosine_similarity()`: `cos_sim()` or `cos_dist()`
     -   `pair_similarity()`
     -   `plot_similarity()`
     -   `tab_similarity()`
-    -   `tab_similarity_cross()`
     -   `most_similar()`: find the Top-N most similar words
+    -   `plot_network()`: visualize a (partial correlation) network graph of words
     -   `test_WEAT()`: WEAT and SC-WEAT with permutation test of significance
     -   `test_RND()`: RND with permutation test of significance
 -   Dictionary Automatic Expansion and Reliability Analysis
     -   `dict_expand()`: expand a dictionary from the most similar words
     -   `dict_reliability()`: reliability analysis and PCA of a dictionary
--   Word Vectors Local Training (Word2Vec, GloVe, and FastText)
+-   Local Training of Static Word Embeddings (Word2Vec, GloVe, and FastText)
     -   `tokenize()`
     -   `train_wordvec()`
 -   Pre-trained Language Models (PLM) and Contextualized Word Embeddings
