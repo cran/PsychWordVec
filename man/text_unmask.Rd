@@ -27,7 +27,7 @@ A \code{data.table} of query results:
 \describe{
   \item{\code{query_id} (if there are more than one \code{query})}{
     \code{query} ID (indicating multiple queries)}
-  \item{\code{mask_id} (if there are more than one [MASK] in \code{query})}{
+  \item{\code{mask_id} (if there are more than one \code{[MASK]} in \code{query})}{
     \code{[MASK]} ID (position in sequence, indicating multiple masks)}
   \item{\code{prob}}{
     Probability of the predicted token in the sequence}
