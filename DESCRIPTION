@@ -1,7 +1,7 @@
 Package: PsychWordVec
 Title: Word Embedding Research Framework for Psychological Science
-Version: 0.3.1
-Date: 2023-03-03
+Version: 0.3.2
+Date: 2023-03-04
 Authors@R: 
     c(person(given = "Han-Wu-Shuang",
              family = "Bao",
@@ -38,6 +38,6 @@ Imports: bruceR, dplyr, stringr, data.table, purrr, vroom, cli,
 Suggests: wordsalad, sweater
 RoxygenNote: 7.2.3
 NeedsCompilation: no
-Packaged: 2023-03-03 20:09:35 UTC; Bruce
+Packaged: 2023-03-04 15:49:28 UTC; Bruce
 Repository: CRAN
-Date/Publication: 2023-03-03 20:20:11 UTC
+Date/Publication: 2023-03-04 16:20:02 UTC

@@ -1,11 +1,11 @@
-50f9c89616debb77e22eda717345b1d6 *DESCRIPTION
+399f9fa8b39d4f5b1d1a8f3ec6222319 *DESCRIPTION
 1ce9110b4feabcc4af832d54c1529033 *NAMESPACE
-d2d9904e95a5ce3b5e1a9acd691da3d6 *NEWS.md
+c7c95dc5a9b0c05af4664d917e717458 *NEWS.md
 49c6e688336c5fe4a36b353193cb4618 *R/00-utils.R
-148a7890c937a6ad148174c466c49821 *R/01-basic.R
+3c29d0b622ac7dbaacaf68f01ecf4fa7 *R/01-basic.R
 85b2b8b3bd8bf72323b74d942cc46d44 *R/02-static.R
 f8289ceeee12e61e17a9a169af63cb4f *R/03-dynamic.R
-549a94ea3241d6e680cf906ed2ecfcaf *README.md
+ae701480d4cb1c93aaa5945c922529fa *README.md
 4f078dbc7102971d2cbeb4fc0c644c42 *data/demodata.rda
 14ccae9ab146702decb74860574c0cee *man/as_embed.Rd
 6599bdfdfe1ba371d34d99655541996e *man/cosine_similarity.Rd
