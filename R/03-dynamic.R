@@ -163,11 +163,11 @@ text_model_download = function(model=NULL) {
     for(m in model) {
       cli::cli_h1("Downloading model \"{m}\"")
       transformers = reticulate::import("transformers")
-      Print("<<cyan Downloading configuration...>>")
+      cli::cli_text("Downloading configuration...")
       config = transformers$AutoConfig$from_pretrained(m)
-      Print("<<cyan Downloading tokenizer...>>")
+      cli::cli_text("Downloading tokenizer...")
       tokenizer = transformers$AutoTokenizer$from_pretrained(m)
-      Print("<<cyan Downloading model...>>")
+      cli::cli_text("Downloading model...")
       model = transformers$AutoModel$from_pretrained(m)
       cli::cli_alert_success("Successfully downloaded model \"{m}\"")
       gc()
@@ -381,11 +381,18 @@ token_to_word = function(embed) {
 }
 
 
-#' Fill in the blank mask(s) in a query (sentence).
+#' <Deprecated> Fill in the blank mask(s) in a query (sentence).
+#'
+#' @description
+#' \emph{Note}: This function has been deprecated and will not be updated
+#' since I have developed new package
+#' \href{https://psychbruce.github.io/FMAT/}{FMAT}
+#' as the integrative toolbox of \emph{Fill-Mask Association Test} (FMAT).
 #'
 #' Predict the probably correct masked token(s) in a sequence,
 #' based on the Python module \code{transformers}.
 #'
+#' @details
 #' Masked language modeling is the task of masking some of the words in a sentence
 #' and predicting which words should replace those masks.
 #' These models are useful when we want to get a statistical understanding of
