@@ -14,6 +14,7 @@
   ## Version Check
   new = FALSE
   inst.ver = as.character(packageVersion("PsychWordVec"))
+  pkg.date = substr(utils::packageDate("PsychWordVec"), 1, 4)
   xml = suppressWarnings({
     try({
       readLines("https://cran.r-project.org/web/packages/PsychWordVec/index.html")
@@ -45,38 +46,43 @@
 
   ## Welcome Message
   if(all(loaded)) {
-    packageStartupMessage(Glue("
-    \n
-    <<magenta PsychWordVec (v{inst.ver})>>
-    <<blue Word Embedding Research Framework for Psychological Science>>
+    packageStartupMessage(glue::glue_col("
 
-    <<magenta Packages also loaded:>>
-    <<green \u2714 data.table, dplyr, stringr, ggplot2>>
+    {magenta PsychWordVec (v{inst.ver})}
+    {blue Word Embedding Research Framework for Psychological Science}
 
-    <<magenta Online documentation:>>
-    <<underline https://psychbruce.github.io/PsychWordVec>>
-    \n
-    "))
+    {magenta Packages also loaded:}
+    {green \u2714 data.table, dplyr, stringr, ggplot2}
+
+    {magenta Online documentation:}
+    {underline https://psychbruce.github.io/PsychWordVec}
+
+    {magenta To use this package in publications, please cite:}
+    Bao, H.-W.-S. ({pkg.date}). "),
+    glue::glue_col("{italic PsychWordVec: Word embedding research framework for psychological science}"),
+    glue::glue_col(" (Version {inst.ver}) [Computer software]. "),
+    glue::glue_col("{underline https://CRAN.R-project.org/package=PsychWordVec}"),
+    "\n")
   } else {
-    packageStartupMessage(Glue("
-    \n
+    packageStartupMessage(glue::glue_col("
+
     These R packages have not been installed:
     {paste(pkgs[loaded==FALSE], collapse=', ')}
 
     Please install them.
-    \n
+
     "))
   }
 
   ## Update Info
   if(new)
-    packageStartupMessage(Glue("
-    \n
+    packageStartupMessage(glue::glue_col("
+
     NEWS: A new version of PsychWordVec ({cran.ver}) is available ({cran.ymd})!
 
     ***** Please update *****
     install.packages(\"PsychWordVec\")
-    \n
+
     "))
 }
 
@@ -913,7 +919,7 @@ extract_valid_subset = function(
 #' \code{\link{data_transform}}
 #'
 #' @examples
-#' ## directly use `embed[i, j]` (3x faster than `wordvec`):
+#' \donttest{## directly use `embed[i, j]` (3x faster than `wordvec`):
 #' d = as_embed(demodata)
 #' d[1:5]
 #' d["people"]
@@ -923,7 +929,7 @@ extract_valid_subset = function(
 #' subset(demodata, c("China", "Japan", "Korea"))
 #' subset(d, pattern="^Chi")
 #'
-#' \donttest{## specify `x` and `pattern`, and save with `file.save`:
+#' ## specify `x` and `pattern`, and save with `file.save`:
 #' subset(demodata, pattern="Chin[ae]|Japan|Korea",
 #'        file.save="subset.RData")
 #'
@@ -1153,11 +1159,11 @@ get_wordembed = function(x, words=NULL, pattern=NULL, words.order=TRUE) {
 #' \code{\link{plot_wordvec_tSNE}}
 #'
 #' @examples
-#' d = as_embed(demodata, normalize=TRUE)
+#' \donttest{d = as_embed(demodata, normalize=TRUE)
 #'
 #' plot_wordvec(d[1:10])
 #'
-#' \donttest{dt = get_wordvec(d, cc("king, queen, man, woman"))
+#' dt = get_wordvec(d, cc("king, queen, man, woman"))
 #' dt[, QUEEN := king - man + woman]
 #' dt[, QUEEN := QUEEN / sqrt(sum(QUEEN^2))]  # normalize
 #' names(dt)[5] = "king - man + woman"
@@ -1278,7 +1284,7 @@ plot_wordvec = function(
 #' \code{\link{plot_network}}
 #'
 #' @examples
-#' d = as_embed(demodata, normalize=TRUE)
+#' \donttest{d = as_embed(demodata, normalize=TRUE)
 #'
 #' dt = get_wordvec(d, cc("
 #'   man, woman,
@@ -1294,7 +1300,7 @@ plot_wordvec = function(
 #' colors = c(rep("#2B579A", 4), rep("#B7472A", 4))
 #' plot_wordvec_tSNE(dt, colors=colors, seed=1234)
 #'
-#' \donttest{category = c(rep("gender", 4), rep("country", 4))
+#' category = c(rep("gender", 4), rep("country", 4))
 #' plot_wordvec_tSNE(dt, colors=category, seed=1234) +
 #'   scale_x_continuous(limits=c(-200, 200),
 #'                      labels=function(x) x/100) +
@@ -1420,8 +1426,8 @@ plot_wordvec_tSNE = function(
 #' \code{\link{dict_reliability}}
 #'
 #' @examples
-#' sum_wordvec(normalize(demodata), ~ king - man + woman)
-#'
+#' \donttest{sum_wordvec(normalize(demodata), ~ king - man + woman)
+#' }
 #' @export
 sum_wordvec = function(data, x=NULL, verbose=TRUE) {
   data = force_normalize(as_embed(data), verbose)  # pre-normalized
@@ -1615,7 +1621,7 @@ pair_similarity = function(
 #' \code{\link{test_RND}}
 #'
 #' @examples
-#' tab_similarity(demodata, cc("king, queen, man, woman"))
+#' \donttest{tab_similarity(demodata, cc("king, queen, man, woman"))
 #' tab_similarity(demodata, cc("king, queen, man, woman"),
 #'                unique=TRUE)
 #'
@@ -1627,7 +1633,7 @@ pair_similarity = function(
 #' tab_similarity(demodata,
 #'                words1=cc("king, queen, King, Queen"),
 #'                words2=cc("man, woman"))
-#'
+#' }
 #' @export
 tab_similarity = function(
     data,
@@ -1704,7 +1710,7 @@ tab_similarity = function(
 #' \code{\link{plot_network}}
 #'
 #' @examples
-#' w1 = cc("king, queen, man, woman")
+#' \donttest{w1 = cc("king, queen, man, woman")
 #' plot_similarity(demodata, w1)
 #' plot_similarity(demodata, w1,
 #'                 value.color="grey",
@@ -1721,7 +1727,7 @@ tab_similarity = function(
 #'   value.color="grey20"
 #' )
 #'
-#' \donttest{w2 = cc("China, Chinese,
+#' w2 = cc("China, Chinese,
 #'          Japan, Japanese,
 #'          Korea, Korean,
 #'          man, woman, boy, girl,
@@ -1835,7 +1841,7 @@ plot_similarity = function(
 #' \code{\link{plot_wordvec_tSNE}}
 #'
 #' @examples
-#' d = as_embed(demodata, normalize=TRUE)
+#' \donttest{d = as_embed(demodata, normalize=TRUE)
 #'
 #' words = cc("
 #' man, woman,
@@ -1857,7 +1863,7 @@ plot_similarity = function(
 #'
 #' unlink("network.png")  # delete file for code check
 #'
-#' \donttest{# network analysis with centrality plot (see `qgraph` package)
+#' # network analysis with centrality plot (see `qgraph` package)
 #' qgraph::centralityPlot(p, include="all", scale="raw",
 #'                        orderBy="Strength")
 #'
@@ -3014,12 +3020,12 @@ print.rnd = function(x, digits=3, ...) {
 #' \code{\link{as_wordvec}} / \code{\link{as_embed}}
 #'
 #' @examples
-#' M = matrix(c(0,0,  1,2,  2,0,  3,2,  4,0), ncol=2, byrow=TRUE)
+#' \donttest{M = matrix(c(0,0,  1,2,  2,0,  3,2,  4,0), ncol=2, byrow=TRUE)
 #' X = matrix(c(0,0, -2,1,  0,2, -2,3,  0,4), ncol=2, byrow=TRUE)
 #' rownames(M) = rownames(X) = cc("A, B, C, D, E")  # words
 #' colnames(M) = colnames(X) = cc("dim1, dim2")  # dimensions
 #'
-#' \donttest{ggplot() +
+#' ggplot() +
 #'   geom_path(data=as.data.frame(M), aes(x=dim1, y=dim2),
 #'             color="red") +
 #'   geom_path(data=as.data.frame(X), aes(x=dim1, y=dim2),
