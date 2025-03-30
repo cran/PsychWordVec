@@ -1,11 +1,10 @@
-cf7eea29568768fa66373ed742407a05 *DESCRIPTION
-1ce9110b4feabcc4af832d54c1529033 *NAMESPACE
-cb1cd7ed018d48033d1765a41768313b *NEWS.md
+c4aa43561572a32cbe535b308e8924b4 *DESCRIPTION
+e466ef447097d97b9d1459a8ca2d3422 *NAMESPACE
+cb1aa2df3d63cb250f03ffe7d9303d80 *NEWS.md
 49c6e688336c5fe4a36b353193cb4618 *R/00-utils.R
 81d12ff3678c4f257bc7679b36e0b1ed *R/01-basic.R
 475c63dfc3c8a213b88fd92e897fc932 *R/02-static.R
-ed03131eefd5c7a87fa7c088ecc67bb6 *R/03-dynamic.R
-7683b150e955978a0d2e562bc5403d56 *README.md
+950575e903107c8b5100d22397e06ff6 *README.md
 4f078dbc7102971d2cbeb4fc0c644c42 *data/demodata.rda
 14ccae9ab146702decb74860574c0cee *man/as_embed.Rd
 6599bdfdfe1ba371d34d99655541996e *man/cosine_similarity.Rd
@@ -30,10 +29,5 @@ dceef28fc5a7b254e7012ac80602b3b2 *man/plot_wordvec.Rd
 9088928b93752fd9cb560595a3c28711 *man/tab_similarity.Rd
 cee9d25f46339856455514b984ba7b5b *man/test_RND.Rd
 ade557f1324355d81fccf1f5f858abe1 *man/test_WEAT.Rd
-43077fa0c7a564ed973da09a23d35a8c *man/text_init.Rd
-ca988e3169ffbb664af41a86a677d1aa *man/text_model_download.Rd
-1ed7d203072e05b9d0e56f5354fea9f1 *man/text_model_remove.Rd
-06ad7ed64250719d39aad3d16c746cce *man/text_to_vec.Rd
-0abfd4a0a44fa2bf7243fc56ebf9fe6f *man/text_unmask.Rd
 0c080884a4f6e862b201a7b6faba75f2 *man/tokenize.Rd
 3d8dc563bdc60668c23f5fa735ed8626 *man/train_wordvec.Rd
