@@ -9,8 +9,6 @@ An integrative toolbox of word embedding research that provides:
 3.  A range of tests to examine conceptual associations, including the *Word Embedding Association Test* (Caliskan et al., 2017) and the *Relative Norm Distance* (Garg et al., 2018), with permutation test of significance.
 4.  A set of training methods to locally train (*static*) word vectors from text corpora, including *Word2Vec* (Mikolov et al., 2013), *GloVe* (Pennington et al., 2014), and *FastText* (Bojanowski et al., 2017).
 
-⚠️ *All users should update the package to version ≥ 0.3.2. Old versions may have slow processing speed and other problems.*
-
 <!-- badges: start -->
 
 [![CRAN-Version](https://www.r-pkg.org/badges/version/PsychWordVec?color=red)](https://CRAN.R-project.org/package=PsychWordVec) [![GitHub-Version](https://img.shields.io/github/r-package/v/psychbruce/PsychWordVec?label=GitHub&color=orange)](https://github.com/psychbruce/PsychWordVec) [![R-CMD-check](https://github.com/psychbruce/PsychWordVec/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/psychbruce/PsychWordVec/actions/workflows/R-CMD-check.yaml) [![CRAN-Downloads](https://cranlogs.r-pkg.org/badges/grand-total/PsychWordVec)](https://psychbruce.github.io/PsychWordVec/) [![GitHub-Stars](https://img.shields.io/github/stars/psychbruce/PsychWordVec?style=social)](https://github.com/psychbruce/PsychWordVec/stargazers)
@@ -21,7 +19,7 @@ An integrative toolbox of word embedding research that provides:
 
 ## Author
 
-Han-Wu-Shuang (Bruce) Bao 包寒吴霜
+Bruce H. W. S. Bao 包寒吴霜
 
 📬 [baohws\@foxmail.com](mailto:baohws@foxmail.com)
 
@@ -29,9 +27,8 @@ Han-Wu-Shuang (Bruce) Bao 包寒吴霜
 
 ## Citation
 
--   Bao, H.-W.-S. (2022). *PsychWordVec: Word embedding research framework for psychological science*. <https://CRAN.R-project.org/package=PsychWordVec>
-    -   *Note*: This is the original citation. Please refer to the information when you `library(PsychWordVec)` for the APA-7 format of the version you installed.
--   Bao, H.-W.-S., Wang, Z., Cheng, X., Su, Z., Yang, Y., Zhang, G., Wang, B., & Cai, H. (2023). Using word embeddings to investigate human psychology: Methods and applications. *Advances in Psychological Science, 31*(6), 887–904.\
+-   Bao, H. W. S. (2022). *PsychWordVec: Word embedding research framework for psychological science*. <https://doi.org/10.32614/CRAN.package.PsychWordVec>
+-   Bao, H. W. S., Wang, Z., Cheng, X., Su, Z., Yang, Y., Zhang, G., Wang, B., & Cai, H. (2023). Using word embeddings to investigate human psychology: Methods and applications. *Advances in Psychological Science, 31*(6), 887–904. <https://doi.org/10.3724/SP.J.1042.2023.00887>\
     [包寒吴霜, 王梓西, 程曦, 苏展, 杨盈, 张光耀, 王博, 蔡华俭. (2023). 基于词嵌入技术的心理学研究：方法及应用. *心理科学进展, 31*(6), 887–904.]
 
 ## Installation
@@ -48,7 +45,7 @@ devtools::install_github("psychbruce/PsychWordVec", force=TRUE)
 ## Types of Data for `PsychWordVec`
 
 |   | `embed` | `wordvec` |
-|------------------------|------------------------|------------------------|
+|----|----|----|
 | Basic class | matrix | data.table |
 | Row size | vocabulary size | vocabulary size |
 | Column size | dimension size | 2 (variables: `word`, `vec`) |

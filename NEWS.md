@@ -1,6 +1,8 @@
 **Please check the [latest news (change log)](https://psychbruce.github.io/PsychWordVec/news/index.html) and keep this package updated.**
 
-⚠️ *All users should update the package to version ≥ 0.3.2. Old versions may have slow processing speed and other problems.*
+# PsychWordVec 2025.8
+
+-   Refined help pages in the style of Roxygen markdown.
 
 # PsychWordVec 2025.3
 
@@ -136,4 +138,3 @@
 # PsychWordVec 0.0.1 (Mar 2022)
 
 -   Basic functions and the [WordVector_RData.pdf](https://psychbruce.github.io/WordVector_RData.pdf) file.
-
